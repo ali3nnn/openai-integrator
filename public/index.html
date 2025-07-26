@@ -167,47 +167,6 @@
     <div class="container">
         <h1>🔍 OCR Proxy Server</h1>
         
-        <div class="status">
-            <h2>✅ Server Status: Running</h2>
-            <p>OCR Proxy Server is active and ready to process requests</p>
-        </div>
-        
-        <div class="endpoint">
-            <h3><span class="method">POST</span> ID Card OCR Endpoint</h3>
-            <div class="url">/ocr/idcard</div>
-            <p>Extract text from ID cards using OpenAI's GPT-4 Vision API</p>
-            <p><strong>Request Body:</strong> JSON with base64 encoded image in "idCardBase64" field</p>
-            <p><strong>Response:</strong> Structured JSON with ID card data</p>
-        </div>
-        
-        <div class="endpoint">
-            <h3><span class="method">POST</span> Vehicle Book OCR Endpoint</h3>
-            <div class="url">/ocr/vehiclebook</div>
-            <p>Extract text from vehicle registration books using OpenAI's GPT-4 Vision API</p>
-            <p><strong>Request Body:</strong> JSON with base64 encoded image in "vehicleBookBase64" field</p>
-            <p><strong>Response:</strong> Structured JSON with vehicle book data</p>
-        </div>
-        
-        <div class="info">
-            <h3>🛡️ Security Features</h3>
-            <div class="feature">
-                <span class="feature-icon">🔒</span>
-                <span>Origin-based access control</span>
-            </div>
-            <div class="feature">
-                <span class="feature-icon">⚡</span>
-                <span>Rate limiting (2 requests/minute per IP)</span>
-            </div>
-            <div class="feature">
-                <span class="feature-icon">🛡️</span>
-                <span>CORS protection enabled</span>
-            </div>
-            <div class="feature">
-                <span class="feature-icon">✅</span>
-                <span>Input validation and sanitization</span>
-            </div>
-        </div>
-        
         <div class="upload-form">
             <h3>📤 Upload Document for OCR</h3>
             <form id="ocrForm">
