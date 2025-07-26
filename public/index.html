@@ -1,0 +1,388 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OCR Proxy Server</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: white;
+        }
+        .container {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        }
+        h1 {
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 2.5em;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+        }
+        .status {
+            background: rgba(76, 175, 80, 0.2);
+            border: 1px solid rgba(76, 175, 80, 0.3);
+            border-radius: 10px;
+            padding: 20px;
+            margin: 20px 0;
+            text-align: center;
+        }
+        .endpoint {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            padding: 20px;
+            margin: 20px 0;
+            border-left: 4px solid #667eea;
+        }
+        .method {
+            background: #667eea;
+            color: white;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-weight: bold;
+            font-size: 0.9em;
+        }
+        .url {
+            font-family: 'Courier New', monospace;
+            background: rgba(0, 0, 0, 0.2);
+            padding: 8px 12px;
+            border-radius: 4px;
+            margin: 10px 0;
+            display: inline-block;
+        }
+        .info {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 10px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+        .feature {
+            display: flex;
+            align-items: center;
+            margin: 10px 0;
+        }
+        .feature-icon {
+            margin-right: 10px;
+            font-size: 1.2em;
+        }
+        .client-info {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 10px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+        .loading {
+            color: #ffd700;
+            font-style: italic;
+        }
+        .upload-form {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            padding: 30px;
+            margin: 20px 0;
+            border-left: 4px solid #4CAF50;
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: bold;
+        }
+        .form-group select,
+        .form-group input[type="file"] {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            font-size: 16px;
+        }
+        .form-group select option {
+            background: #333;
+            color: white;
+        }
+        .submit-btn {
+            background: linear-gradient(45deg, #4CAF50, #45a049);
+            color: white;
+            padding: 12px 30px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        .submit-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(76, 175, 80, 0.3);
+        }
+        .submit-btn:disabled {
+            background: #666;
+            cursor: not-allowed;
+            transform: none;
+        }
+        .result {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            padding: 20px;
+            margin: 20px 0;
+            border-left: 4px solid #2196F3;
+            display: none;
+        }
+        .error {
+            border-left-color: #f44336;
+            background: rgba(244, 67, 54, 0.1);
+        }
+        .success {
+            border-left-color: #4CAF50;
+            background: rgba(76, 175, 80, 0.1);
+        }
+        .loading-spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top-color: #fff;
+            animation: spin 1s ease-in-out infinite;
+            margin-right: 10px;
+        }
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔍 OCR Proxy Server</h1>
+        
+        <div class="status">
+            <h2>✅ Server Status: Running</h2>
+            <p>OCR Proxy Server is active and ready to process requests</p>
+        </div>
+        
+        <div class="endpoint">
+            <h3><span class="method">POST</span> ID Card OCR Endpoint</h3>
+            <div class="url">/ocr/idcard</div>
+            <p>Extract text from ID cards using OpenAI's GPT-4 Vision API</p>
+            <p><strong>Request Body:</strong> JSON with base64 encoded image in "idCardBase64" field</p>
+            <p><strong>Response:</strong> Structured JSON with ID card data</p>
+        </div>
+        
+        <div class="endpoint">
+            <h3><span class="method">POST</span> Vehicle Book OCR Endpoint</h3>
+            <div class="url">/ocr/vehiclebook</div>
+            <p>Extract text from vehicle registration books using OpenAI's GPT-4 Vision API</p>
+            <p><strong>Request Body:</strong> JSON with base64 encoded image in "vehicleBookBase64" field</p>
+            <p><strong>Response:</strong> Structured JSON with vehicle book data</p>
+        </div>
+        
+        <div class="info">
+            <h3>🛡️ Security Features</h3>
+            <div class="feature">
+                <span class="feature-icon">🔒</span>
+                <span>Origin-based access control</span>
+            </div>
+            <div class="feature">
+                <span class="feature-icon">⚡</span>
+                <span>Rate limiting (2 requests/minute per IP)</span>
+            </div>
+            <div class="feature">
+                <span class="feature-icon">🛡️</span>
+                <span>CORS protection enabled</span>
+            </div>
+            <div class="feature">
+                <span class="feature-icon">✅</span>
+                <span>Input validation and sanitization</span>
+            </div>
+        </div>
+        
+        <div class="upload-form">
+            <h3>📤 Upload Document for OCR</h3>
+            <form id="ocrForm">
+                <div class="form-group">
+                    <label for="documentType">Document Type:</label>
+                    <select id="documentType" required>
+                        <option value="">Select document type...</option>
+                        <option value="idcard">ID Card</option>
+                        <option value="vehiclebook">Vehicle Registration Book</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="imageFile">Upload Image (JPG/JPEG):</label>
+                    <input type="file" id="imageFile" accept=".jpg,.jpeg" required>
+                </div>
+                <button type="submit" class="submit-btn" id="submitBtn">
+                    <span id="submitText">🔍 Extract Text</span>
+                    <span id="submitSpinner" class="loading-spinner" style="display: none;"></span>
+                </button>
+            </form>
+        </div>
+
+        <div class="result" id="result">
+            <h3>📋 OCR Results</h3>
+            <div id="resultContent"></div>
+        </div>
+
+        <div class="client-info">
+            <h3>📊 Client Information</h3>
+            <p><strong>Your IP:</strong> <span id="client-ip" class="loading">Loading...</span></p>
+            <p><strong>User Agent:</strong> <span id="user-agent" class="loading">Loading...</span></p>
+            <p><strong>Origin:</strong> <span id="origin" class="loading">Loading...</span></p>
+            <p><strong>Host:</strong> <span id="host" class="loading">Loading...</span></p>
+            <p><strong>Referer:</strong> <span id="referer" class="loading">Loading...</span></p>
+            <p><strong>Request Time:</strong> <span id="request-time"></span></p>
+        </div>
+    </div>
+
+    <script>
+        // Set request time immediately
+        document.getElementById('request-time').textContent = new Date().toLocaleString();
+        
+        // Fetch client information from server
+        fetch('/api/client-info')
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById('client-ip').textContent = data.ip || 'Unknown';
+                document.getElementById('user-agent').textContent = data.userAgent || 'Unknown';
+                document.getElementById('origin').textContent = data.origin || 'Direct access';
+                document.getElementById('host').textContent = data.host || 'Unknown';
+                document.getElementById('referer').textContent = data.referer || 'Direct access';
+            })
+            .catch(error => {
+                console.error('Error fetching client info:', error);
+                document.getElementById('client-ip').textContent = 'Error loading';
+                document.getElementById('user-agent').textContent = 'Error loading';
+                document.getElementById('origin').textContent = 'Error loading';
+                document.getElementById('host').textContent = 'Error loading';
+                document.getElementById('referer').textContent = 'Error loading';
+            });
+
+        // OCR Form handling
+        document.getElementById('ocrForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const documentType = document.getElementById('documentType').value;
+            const imageFile = document.getElementById('imageFile').files[0];
+            const submitBtn = document.getElementById('submitBtn');
+            const submitText = document.getElementById('submitText');
+            const submitSpinner = document.getElementById('submitSpinner');
+            const result = document.getElementById('result');
+            const resultContent = document.getElementById('resultContent');
+            
+            if (!documentType || !imageFile) {
+                showResult('Please select both document type and image file.', 'error');
+                return;
+            }
+            
+            // Validate file type
+            if (!imageFile.type.startsWith('image/jpeg')) {
+                showResult('Please upload a JPG/JPEG image file.', 'error');
+                return;
+            }
+            
+            // Show loading state
+            submitBtn.disabled = true;
+            submitText.textContent = 'Processing...';
+            submitSpinner.style.display = 'inline-block';
+            result.style.display = 'none';
+            
+            try {
+                // Convert image to base64
+                const base64 = await fileToBase64(imageFile);
+                
+                // Determine endpoint based on document type
+                const endpoint = documentType === 'idcard' ? '/ocr/idcard' : '/ocr/vehiclebook';
+                const fieldName = documentType === 'idcard' ? 'idCardBase64' : 'vehicleBookBase64';
+                
+                // Send to OCR endpoint
+                const response = await fetch(endpoint, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        [fieldName]: base64
+                    })
+                });
+
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
+                }
+                
+                const data = await response.json();
+                showResult(formatResult(data), 'success');
+                
+            } catch (error) {
+                console.error('OCR failed:', error);
+                showResult(error.message, 'error');
+            } finally {
+                // Reset loading state
+                submitBtn.disabled = false;
+                submitText.textContent = '🔍 Extract Text';
+                submitSpinner.style.display = 'none';
+            }
+        });
+        
+        // Convert file to base64
+        function fileToBase64(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = () => resolve(reader.result);
+                reader.onerror = reject;
+                reader.readAsDataURL(file);
+            });
+        }
+        
+        // Show result
+        function showResult(content, type) {
+            const result = document.getElementById('result');
+            const resultContent = document.getElementById('resultContent');
+            
+            result.className = `result ${type}`;
+            resultContent.innerHTML = content;
+            result.style.display = 'block';
+            
+            // Scroll to result
+            result.scrollIntoView({ behavior: 'smooth' });
+        }
+        
+        // Format result for display
+        function formatResult(data) {
+            let html = '<div style="margin-bottom: 20px;">';
+            
+            // Show cost information
+            if (data.cost !== undefined) {
+                html += `<p><strong>💰 Cost:</strong> $${data.cost.toFixed(6)}</p>`;
+            }
+            
+            if (data.inputTokens !== undefined && data.outputTokens !== undefined) {
+                html += `<p><strong>📊 Tokens:</strong> Input: ${data.inputTokens}, Output: ${data.outputTokens}</p>`;
+            }
+            
+            html += '</div>';
+            
+            // Format the result data
+            if (data.result) {
+                html += '<div style="background: rgba(0,0,0,0.2); padding: 15px; border-radius: 8px; font-family: monospace; white-space: pre-wrap;">';
+                html += JSON.stringify(data.result, null, 2);
+                html += '</div>';
+            }
+            
+            return html;
+        }
+    </script>
+</body>
+</html> 

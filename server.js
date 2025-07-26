@@ -24,13 +24,20 @@ app.use(bodyParser.json({
     limit: '10mb'
 }));
 
-// Rate limiting: 2 requests per minute per IP
-const limiter = rateLimit({
+// Serve static files from public directory
+app.use(express.static('public'));
+
+// Rate limiting: 2 requests per minute per IP (only for OCR endpoints)
+const ocrLimiter = rateLimit({
     windowMs: 60 * 1000,
     max: 2,
-    message: 'Rate limit exceeded. Try again in a minute.'
+    message: 'Rate limit exceeded. Try again in a minute.',
+    standardHeaders: true, // (optional) send rate limit info in headers
+    legacyHeaders: false,  // (optional) disable the `X-RateLimit-*` headers
+    handler: (req, res, next, options) => {
+        res.status(options.statusCode).json({ error: options.message });
+    }
 });
-app.use(limiter);
 
 // Manual Origin Check (optional but extra secure)
 app.use((req, res, next) => {
@@ -47,13 +54,25 @@ app.use((req, res, next) => {
   next();
 });
 
+// Client information API endpoint
+app.get('/api/client-info', (req, res) => {
+  res.json({
+    ip: req.ip,
+    userAgent: req.get('User-Agent'),
+    origin: req.get('Origin'),
+    host: req.get('Host'),
+    referer: req.get('Referer'),
+    requestTime: new Date().toISOString()
+  });
+});
+
 // OpenAI instance
 const openai = new OpenAI({
     apiKey: process.env.OPENAI_API_KEY
 });
 
-// OCR Endpoint
-app.post('/ocr/idcard', async (req, res) => {
+// OCR Endpoint with rate limiting
+app.post('/ocr/idcard', ocrLimiter, async (req, res) => {
     const {
         idCardBase64
     } = req.body;
@@ -99,7 +118,7 @@ app.post('/ocr/idcard', async (req, res) => {
     }
 });
 
-app.post('/ocr/vehiclebook', async (req, res) => {
+app.post('/ocr/vehiclebook', ocrLimiter, async (req, res) => {
     const {
         vehicleBookBase64
     } = req.body;
