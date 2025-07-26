@@ -164,6 +164,52 @@ app.post('/ocr/vehiclebook', ocrLimiter, async (req, res) => {
     }
 });
 
+app.post('/ocr/cf', ocrLimiter, async (req, res) => {
+    const {
+        cfBase64
+    } = req.body;
+
+    if (!cfBase64 || !cfBase64.startsWith('data:image/')) {
+        return res.status(400).json({
+            error: 'Invalid image format'
+        });
+    }
+
+    try {
+        const response = await openai.chat.completions.create({
+            model: 'gpt-4.1-nano-2025-04-14',
+            messages: [{
+                role: 'user',
+                content: [{
+                        type: 'text',
+                        text: `Extract the following text from the image: nr. carte funciara, localitate (UAT), nr. cadastral, nr. topografic. UAT right next to "nr. carte funciara" at the top. Return in JSON format. Leave empty if no value found: {"nr_carte_funciara":"","UAT":"","nr_cadastral":"", "nr_topografic":""}`
+                    },
+                    {
+                        type: 'image_url',
+                        image_url: {
+                            url: cfBase64
+                        }
+                    }
+                ]
+            }],
+            max_tokens: 100
+        });
+
+        const result = response.choices[0]?.message?.content;
+        res.json({
+            result: JSON.parse(result),
+            inputTokens: response.usage?.prompt_tokens,
+            outputTokens: response.usage?.completion_tokens,
+            cost: response.usage?.prompt_tokens / 1000000 * 0.1 + response.usage?.completion_tokens / 1000000 * 0.4
+        });
+    } catch (err) {
+        console.error('OpenAI error:', err);
+        res.status(500).json({
+            error: 'OCR failed'
+        });
+    }
+});
+
 // Start server
 app.listen(port, () => {
     console.log(`✅ OCR proxy server running on http://localhost:${port}`);

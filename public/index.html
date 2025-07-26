@@ -174,8 +174,9 @@
                     <label for="documentType">Document Type:</label>
                     <select id="documentType" required>
                         <option value="">Select document type...</option>
-                        <option value="idcard">ID Card</option>
-                        <option value="vehiclebook">Vehicle Registration Book</option>
+                        <option value="idcard">Carte de identitate</option>
+                        <option value="vehiclebook">Talon</option>
+                        <option value="cf">Carte Funciara (CF)</option>
                     </select>
                 </div>
                 <div class="form-group">
@@ -262,8 +263,23 @@
                 const base64 = await fileToBase64(imageFile);
                 
                 // Determine endpoint based on document type
-                const endpoint = documentType === 'idcard' ? '/ocr/idcard' : '/ocr/vehiclebook';
-                const fieldName = documentType === 'idcard' ? 'idCardBase64' : 'vehicleBookBase64';
+                let endpoint, fieldName;
+                switch(documentType) {
+                    case 'idcard':
+                        endpoint = '/ocr/idcard';
+                        fieldName = 'idCardBase64';
+                        break;
+                    case 'vehiclebook':
+                        endpoint = '/ocr/vehiclebook';
+                        fieldName = 'vehicleBookBase64';
+                        break;
+                    case 'cf':
+                        endpoint = '/ocr/cf';
+                        fieldName = 'cfBase64';
+                        break;
+                    default:
+                        throw new Error('Invalid document type');
+                }
                 
                 // Send to OCR endpoint
                 const response = await fetch(endpoint, {
