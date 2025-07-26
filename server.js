@@ -182,7 +182,7 @@ app.post('/ocr/cf', ocrLimiter, async (req, res) => {
                 role: 'user',
                 content: [{
                         type: 'text',
-                        text: `Extract the following text from the image: nr. carte funciara, localitate (UAT), nr. cadastral, nr. topografic. UAT right next to "nr. carte funciara" at the top. Return in JSON format. Leave empty if no value found: {"nr_carte_funciara":"","UAT":"","nr_cadastral":"", "nr_topografic":""}`
+                        text: `Extract the following text from the image: nr. carte funciara, localitate (UAT), nr. cadastral, nr. topografic. UAT right next to "nr. carte funciara" at the top. Return in JSON format. Leave empty if no value found: {"nr_carte_funciara":"","adresa": {"localitate":"", "judet": ""},"nr_cadastral":"", "nr_topografic":""}`
                     },
                     {
                         type: 'image_url',
