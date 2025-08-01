@@ -6,6 +6,7 @@ import bodyParser from 'body-parser';
 import {
     OpenAI
 } from 'openai';
+import { searchANCPI, getUATs } from './ancpi.js';
 
 dotenv.config();
 
@@ -29,7 +30,8 @@ app.use(express.static('public'));
 
 // Rate limiting: 2 requests per minute per IP (only for OCR endpoints)
 const ocrLimiter = rateLimit({
-    windowMs: 60 * 1000,
+    // windowMs: 60 * 1000,
+    windowMs: 1000,
     max: 2,
     message: 'Rate limit exceeded. Try again in a minute.',
     standardHeaders: true, // (optional) send rate limit info in headers
@@ -47,7 +49,7 @@ app.use((req, res, next) => {
   const userAgent = req.get('User-Agent');
   const host = req.get('Host');
   const referer = req.get('Referer');
-  console.log({origin, ip, ips, userAgent, host, referer});
+//   console.log({origin, ip, ips, userAgent, host, referer});
 //   if (origin !== allowedOrigin) {
 //     return res.status(403).json({ error: 'Forbidden: Invalid origin' });
 //   }
@@ -206,6 +208,75 @@ app.post('/ocr/cf', ocrLimiter, async (req, res) => {
         console.error('OpenAI error:', err);
         res.status(500).json({
             error: 'OCR failed'
+        });
+    }
+});
+
+// ANCPI Endpoint with rate limiting
+app.post('/api/ancpi/search', ocrLimiter, async (req, res) => {
+    const { county, cityName, cityValue, cfNumber, pid } = req.body;
+
+    if (!county || !cityName || !cityValue || !cfNumber) {
+        return res.status(400).json({
+            error: 'Missing required parameters: county, cityName, cityValue, cfNumber'
+        });
+    }
+
+    try {
+        const result = await searchANCPI(county, cityName, cityValue, cfNumber, pid);
+        
+        if (result.success) {
+            res.json({
+                success: true,
+                data: result.data,
+                city: result.city,
+                lid: result.lid,
+                token: result.token
+            });
+        } else {
+            res.status(400).json({
+                success: false,
+                error: result.error
+            });
+        }
+    } catch (err) {
+        console.error('ANCPI error:', err);
+        res.status(500).json({
+            success: false,
+            error: 'ANCPI search failed'
+        });
+    }
+});
+
+// ANCPI UATs endpoint to fetch cities for a county
+app.post('/api/ancpi/uats', ocrLimiter, async (req, res) => {
+    const { county } = req.body;
+
+    if (!county) {
+        return res.status(400).json({
+            error: 'Missing required parameter: county'
+        });
+    }
+
+    try {
+        const result = await getUATs(county);
+        
+        if (result.success) {
+            res.json({
+                success: true,
+                cities: result.cities
+            });
+        } else {
+            res.status(400).json({
+                success: false,
+                error: result.error
+            });
+        }
+    } catch (err) {
+        console.error('ANCPI UATs error:', err);
+        res.status(500).json({
+            success: false,
+            error: 'Failed to fetch cities'
         });
     }
 });

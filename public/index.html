@@ -190,9 +190,86 @@
             </form>
         </div>
 
+        <div class="upload-form">
+            <h3>🏠 ANCPI Search</h3>
+            <form id="ancpiForm">
+                <div class="form-group">
+                    <label for="county">County:</label>
+                    <select id="county" required>
+                        <option value="">Select county...</option>
+                        <option value="ALBA">ALBA</option>
+                        <option value="ARAD">ARAD</option>
+                        <option value="ARGES">ARGES</option>
+                        <option value="BACAU">BACAU</option>
+                        <option value="BIHOR">BIHOR</option>
+                        <option value="BISTRITANASAUD">BISTRITA NASAUD</option>
+                        <option value="BOTOSANI">BOTOSANI</option>
+                        <option value="BRAILA">BRAILA</option>
+                        <option value="BRASOV">BRASOV</option>
+                        <option value="BUCURESTI">BUCURESTI</option>
+                        <option value="BUZAU">BUZAU</option>
+                        <option value="CALARASI">CALARASI</option>
+                        <option value="CARASSEVERIN">CARAS SEVERIN</option>
+                        <option value="CLUJ">CLUJ</option>
+                        <option value="CONSTANTA">CONSTANTA</option>
+                        <option value="COVASNA">COVASNA</option>
+                        <option value="DAMBOVITA">DAMBOVITA</option>
+                        <option value="DOLJ">DOLJ</option>
+                        <option value="GALATI">GALATI</option>
+                        <option value="GIURGIU">GIURGIU</option>
+                        <option value="GORJ">GORJ</option>
+                        <option value="HARGHITA">HARGHITA</option>
+                        <option value="HUNEDOARA">HUNEDOARA</option>
+                        <option value="IALOMITA">IALOMITA</option>
+                        <option value="IASI">IASI</option>
+                        <option value="ILFOV">ILFOV</option>
+                        <option value="MARAMURES">MARAMURES</option>
+                        <option value="MEHEDINTI">MEHEDINTI</option>
+                        <option value="MURES">MURES</option>
+                        <option value="NEAMT">NEAMT</option>
+                        <option value="OLT">OLT</option>
+                        <option value="PRAHOVA">PRAHOVA</option>
+                        <option value="SALAJ">SALAJ</option>
+                        <option value="SATUMARE">SATU MARE</option>
+                        <option value="SIBIU">SIBIU</option>
+                        <option value="SUCEAVA">SUCEAVA</option>
+                        <option value="TELEORMAN">TELEORMAN</option>
+                        <option value="TIMIS">TIMIS</option>
+                        <option value="TULCEA">TULCEA</option>
+                        <option value="VALCEA">VALCEA</option>
+                        <option value="VASLUI">VASLUI</option>
+                        <option value="VRANCEA">VRANCEA</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="city">City:</label>
+                    <select id="city" required>
+                        <option value="">Select county first...</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="cfNumber">CF Number:</label>
+                    <input type="text" id="cfNumber" placeholder="e.g., 100002" required>
+                </div>
+                <div class="form-group">
+                    <label for="pid">PID (optional):</label>
+                    <input type="text" id="pid" placeholder="1" value="1">
+                </div>
+                <button type="submit" class="submit-btn" id="ancpiSubmitBtn">
+                    <span id="ancpiSubmitText">🔍 Search ANCPI</span>
+                    <span id="ancpiSubmitSpinner" class="loading-spinner" style="display: none;"></span>
+                </button>
+            </form>
+        </div>
+
         <div class="result" id="result">
             <h3>📋 OCR Results</h3>
             <div id="resultContent"></div>
+        </div>
+
+        <div class="result" id="ancpiResult">
+            <h3>🏠 ANCPI Results</h3>
+            <div id="ancpiResultContent"></div>
         </div>
 
         <div class="client-info">
@@ -310,6 +387,119 @@
                 submitSpinner.style.display = 'none';
             }
         });
+
+        // ANCPI Form handling
+        document.getElementById('ancpiForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const county = document.getElementById('county').value.trim();
+            const citySelect = document.getElementById('city');
+            const cityValue = citySelect.value.trim();
+            const cityName = citySelect.options[citySelect.selectedIndex]?.textContent || '';
+            const cfNumber = document.getElementById('cfNumber').value.trim();
+            const pid = document.getElementById('pid').value.trim() || '1';
+            
+            const submitBtn = document.getElementById('ancpiSubmitBtn');
+            const submitText = document.getElementById('ancpiSubmitText');
+            const submitSpinner = document.getElementById('ancpiSubmitSpinner');
+            const result = document.getElementById('ancpiResult');
+            const resultContent = document.getElementById('ancpiResultContent');
+            
+            if (!county || !cityValue || !cfNumber) {
+                showAncpiResult('Please fill in all required fields: county, city, and CF number.', 'error');
+                return;
+            }
+            
+            // Show loading state
+            submitBtn.disabled = true;
+            submitText.textContent = 'Searching...';
+            submitSpinner.style.display = 'inline-block';
+            result.style.display = 'none';
+            
+            try {
+                // Send to ANCPI endpoint
+                const response = await fetch('/api/ancpi/search', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        county: county,
+                        cityName: cityName,
+                        cityValue: cityValue,
+                        cfNumber: cfNumber,
+                        pid: pid
+                    })
+                });
+
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
+                }
+                
+                const data = await response.json();
+                showAncpiResult(formatAncpiResult(data), 'success');
+                
+            } catch (error) {
+                console.error('ANCPI search failed:', error);
+                showAncpiResult(error.message, 'error');
+            } finally {
+                // Reset loading state
+                submitBtn.disabled = false;
+                submitText.textContent = '🔍 Search ANCPI';
+                submitSpinner.style.display = 'none';
+            }
+        });
+
+        // County change handler to fetch UATs
+        document.getElementById('county').addEventListener('change', async function(e) {
+            const county = e.target.value;
+            const citySelect = document.getElementById('city');
+            
+            if (!county) {
+                // Reset city dropdown if no county selected
+                citySelect.innerHTML = '<option value="">Select county first...</option>';
+                return;
+            }
+            
+            try {
+                // Show loading state for city dropdown
+                citySelect.innerHTML = '<option value="">Loading cities...</option>';
+                citySelect.disabled = true;
+                
+                // Fetch UATs for the selected county
+                const response = await fetch('/api/ancpi/uats', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ county: county })
+                });
+
+                if (!response.ok) {
+                    throw new Error(`Failed to fetch cities for county: ${county}`);
+                }
+                
+                const data = await response.json();
+                
+                // Populate city dropdown
+                citySelect.innerHTML = '<option value="">Select city...</option>';
+                if (data.cities && data.cities.length > 0) {
+                    data.cities.forEach(city => {
+                        const option = document.createElement('option');
+                        option.value = city.value;
+                        option.textContent = city.label;
+                        citySelect.appendChild(option);
+                    });
+                }
+                
+            } catch (error) {
+                console.error('Failed to fetch cities:', error);
+                citySelect.innerHTML = '<option value="">Error loading cities</option>';
+            } finally {
+                citySelect.disabled = false;
+            }
+        });
         
         // Convert file to base64
         function fileToBase64(file) {
@@ -354,6 +544,50 @@
                 html += '<div style="background: rgba(0,0,0,0.2); padding: 15px; border-radius: 8px; font-family: monospace; white-space: pre-wrap;">';
                 html += JSON.stringify(data.result, null, 2);
                 html += '</div>';
+            }
+            
+            return html;
+        }
+
+        // Show ANCPI result
+        function showAncpiResult(content, type) {
+            const result = document.getElementById('ancpiResult');
+            const resultContent = document.getElementById('ancpiResultContent');
+            
+            result.className = `result ${type}`;
+            resultContent.innerHTML = content;
+            result.style.display = 'block';
+            
+            // Scroll to result
+            result.scrollIntoView({ behavior: 'smooth' });
+        }
+
+        // Format ANCPI result for display
+        function formatAncpiResult(data) {
+            let html = '<div style="margin-bottom: 20px;">';
+            
+            if (data.success) {
+                // Show metadata
+                if (data.city) {
+                    html += `<p><strong>🏙️ City:</strong> ${data.city}</p>`;
+                }
+                if (data.lid) {
+                    html += `<p><strong>🆔 LID:</strong> ${data.lid}</p>`;
+                }
+                if (data.token) {
+                    html += `<p><strong>�� Token:</strong> ${data.token}</p>`;
+                }
+                
+                html += '</div>';
+                
+                // Show the main data
+                if (data.data) {
+                    html += '<div style="background: rgba(0,0,0,0.2); padding: 15px; border-radius: 8px; font-family: monospace; white-space: pre-wrap;">';
+                    html += JSON.stringify(data.data, null, 2);
+                    html += '</div>';
+                }
+            } else {
+                html += `<p style="color: #f44336;"><strong>❌ Error:</strong> ${data.error}</p>`;
             }
             
             return html;
