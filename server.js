@@ -30,8 +30,7 @@ app.use(express.static('public'));
 
 // Rate limiting: 2 requests per minute per IP (only for OCR endpoints)
 const ocrLimiter = rateLimit({
-    // windowMs: 60 * 1000,
-    windowMs: 1000,
+    windowMs: 60 * 1000,
     max: 2,
     message: 'Rate limit exceeded. Try again in a minute.',
     standardHeaders: true, // (optional) send rate limit info in headers
@@ -73,7 +72,6 @@ const openai = new OpenAI({
     apiKey: process.env.OPENAI_API_KEY
 });
 
-// OCR Endpoint with rate limiting
 app.post('/ocr/idcard', ocrLimiter, async (req, res) => {
     const {
         idCardBase64
@@ -212,8 +210,7 @@ app.post('/ocr/cf', ocrLimiter, async (req, res) => {
     }
 });
 
-// ANCPI Endpoint with rate limiting
-app.post('/api/ancpi/search', ocrLimiter, async (req, res) => {
+app.post('/api/ancpi/search', async (req, res) => {
     const { county, cityName, cityValue, cfNumber, pid } = req.body;
 
     if (!county || !cityName || !cityValue || !cfNumber) {
@@ -248,8 +245,7 @@ app.post('/api/ancpi/search', ocrLimiter, async (req, res) => {
     }
 });
 
-// ANCPI UATs endpoint to fetch cities for a county
-app.post('/api/ancpi/uats', ocrLimiter, async (req, res) => {
+app.post('/api/ancpi/uats', async (req, res) => {
     const { county } = req.body;
 
     if (!county) {
