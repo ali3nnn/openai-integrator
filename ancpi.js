@@ -27,16 +27,21 @@ let axiosInstance = null;
 function createAxiosInstance() {
     if (!axiosInstance) {
         const cookieJar = new tough.CookieJar();
+        // Try to use IP address if DNS fails
+        const baseURL = process.env.CF_RO_IP ? `https://${process.env.CF_RO_IP}/` : 'https://cf.ro/';
+        
         axiosInstance = wrapper(axios.create({
-            baseURL: 'https://cf.ro/',
+            baseURL: baseURL,
             headers: {
                 'User-Agent': getRandomUserAgent(),
                 'X-Requested-With': 'XMLHttpRequest',
                 'Referer': 'https://cf.ro/',
                 'Origin': 'https://cf.ro',
+                'Host': 'cf.ro' // Important for IP-based requests
             },
             jar: cookieJar,
             withCredentials: true,
+            timeout: 30000 // 30 second timeout
         }));
     }
     return axiosInstance;
