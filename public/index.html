@@ -252,8 +252,16 @@
                     <input type="text" id="cfNumber" placeholder="e.g., 100002" required>
                 </div>
                 <div class="form-group">
-                    <label for="pid">PID (optional):</label>
-                    <input type="text" id="pid" placeholder="1" value="1">
+                    <label for="cfDocumentType">Document Type:</label>
+                    <select id="cfDocumentType" required>
+                        <option value="">Select document type...</option>
+                        <option value="1">Nr. Carte Funciară</option>
+                        <option value="2">Nr. Cadastral / Nr. Topografic</option>
+                    </select>
+                </div>
+                <div class="form-group" id="cadField" style="display: none;">
+                    <label for="cadNumber">Nr. Cadastral / Nr. Topografic:</label>
+                    <input type="text" id="cadNumber" placeholder="e.g., 123456">
                 </div>
                 <button type="submit" class="submit-btn" id="ancpiSubmitBtn">
                     <span id="ancpiSubmitText">🔍 Search ANCPI</span>
@@ -397,16 +405,18 @@
             const cityValue = citySelect.value.trim();
             const cityName = citySelect.options[citySelect.selectedIndex]?.textContent || '';
             const cfNumber = document.getElementById('cfNumber').value.trim();
-            const pid = document.getElementById('pid').value.trim() || '1';
+            const pid = document.getElementById('cfDocumentType').value.trim(); // Get the selected PID
+            const cadNumber = document.getElementById('cadNumber').value.trim(); // Get the cad number
             
             const submitBtn = document.getElementById('ancpiSubmitBtn');
             const submitText = document.getElementById('ancpiSubmitText');
             const submitSpinner = document.getElementById('ancpiSubmitSpinner');
             const result = document.getElementById('ancpiResult');
             const resultContent = document.getElementById('ancpiResultContent');
-            
-            if (!county || !cityValue || !cfNumber) {
-                showAncpiResult('Please fill in all required fields: county, city, and CF number.', 'error');
+            console.log(county, cityValue, cfNumber, pid, cadNumber);
+
+            if (!county || !cityValue || !cfNumber || !pid) {
+                showAncpiResult('Please fill in all required fields: county, city, CF number, and document type.', 'error');
                 return;
             }
             
@@ -417,19 +427,25 @@
             result.style.display = 'none';
             
             try {
+                // Prepare the request payload
+                const payload = {
+                    county: county,
+                    cityName: cityName,
+                    cityValue: cityValue,
+                    cfNumber: cfNumber,
+                    pid: pid,
+                    cadNumber: cadNumber
+                };
+                
+                console.log('Sending ANCPI request with payload:', payload);
+                
                 // Send to ANCPI endpoint
                 const response = await fetch('/api/ancpi/search', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
                     },
-                    body: JSON.stringify({
-                        county: county,
-                        cityName: cityName,
-                        cityValue: cityValue,
-                        cfNumber: cfNumber,
-                        pid: pid
-                    })
+                    body: JSON.stringify(payload)
                 });
 
                 if (!response.ok) {
@@ -448,6 +464,16 @@
                 submitBtn.disabled = false;
                 submitText.textContent = '🔍 Search ANCPI';
                 submitSpinner.style.display = 'none';
+            }
+        });
+
+        // Document Type change handler to show/hide cad field
+        document.getElementById('cfDocumentType').addEventListener('change', function(e) {
+            const cadField = document.getElementById('cadField');
+            if (e.target.value === '2') {
+                cadField.style.display = 'block';
+            } else {
+                cadField.style.display = 'none';
             }
         });
 

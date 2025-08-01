@@ -87,7 +87,7 @@ export async function getUATs(county) {
 }
 
 // Function to search ANCPI CF data
-export async function searchANCPI(county, cityName, cityValue, cfNumber, pid = '1') {
+export async function searchANCPI(county, cityName, cityValue, cfNumber, pid = '1', cadNumber = '') {
     try {
         const instance = createAxiosInstance();
         const stoken = await getToken(instance);
@@ -102,7 +102,7 @@ export async function searchANCPI(county, cityName, cityValue, cfNumber, pid = '
             pid: pid,
             lid: lid,
             cf: cfNumber,
-            cad: ''
+            cad: cadNumber // Use the cadNumber parameter
         });
 
         const searchRes = await instance.post(`/ajax/searchCF/${stoken}`, form.toString(), {
@@ -110,8 +110,6 @@ export async function searchANCPI(county, cityName, cityValue, cfNumber, pid = '
                 'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8'
             }
         });
-
-        resetAxiosInstance();
 
         return {
             success: true,
@@ -137,7 +135,7 @@ const PID = '1';
 
 // Original self-executing function for testing
 export async function runDefaultSearch() {
-    return await searchANCPI(COUNTY, CITY_NAME, CF_NUMBER, PID);
+    return await searchANCPI(COUNTY, CITY_NAME, CF_NUMBER, PID, '');
 }
 
 // If this file is run directly, execute the default search

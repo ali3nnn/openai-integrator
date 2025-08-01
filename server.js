@@ -210,19 +210,26 @@ app.post('/ocr/cf', ocrLimiter, async (req, res) => {
     }
 });
 
-app.post('/api/ancpi/search', async (req, res) => {
-    const { county, cityName, cityValue, cfNumber, pid } = req.body;
+// ANCPI Endpoint with rate limiting
+app.post('/api/ancpi/search', ocrLimiter, async (req, res) => {
+    const { county, cityName, cityValue, cfNumber, pid, cadNumber } = req.body;
 
-    if (!county || !cityName || !cityValue || !cfNumber) {
+    // console.log('Received ANCPI request with body:', req.body);
+    // console.log('Extracted parameters:', { county, cityName, cityValue, cfNumber, pid, cadNumber });
+
+    if (!county || !cityName || !cityValue || !cfNumber || !pid) {
+        console.log('Missing required parameters. Received:', { county, cityName, cityValue, cfNumber, pid });
         return res.status(400).json({
-            error: 'Missing required parameters: county, cityName, cityValue, cfNumber'
+            error: 'Missing required parameters: county, cityName, cityValue, cfNumber, pid'
         });
     }
 
     try {
-        const result = await searchANCPI(county, cityName, cityValue, cfNumber, pid);
+        console.log(`Searching ANCPI for county: ${county}, city: ${cityName}, CF: ${cfNumber}, PID: ${pid}`);
+        const result = await searchANCPI(county, cityName, cityValue, cfNumber, pid, cadNumber);
         
         if (result.success) {
+            console.log(`Successfully searched ANCPI for CF: ${cfNumber}`);
             res.json({
                 success: true,
                 data: result.data,
@@ -231,6 +238,7 @@ app.post('/api/ancpi/search', async (req, res) => {
                 token: result.token
             });
         } else {
+            console.error(`Failed to search ANCPI for CF ${cfNumber}:`, result.error);
             res.status(400).json({
                 success: false,
                 error: result.error
